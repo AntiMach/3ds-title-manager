@@ -21,13 +21,24 @@ if not exist ".data\settings.txt" (
 	call centertext "Play music (you can change this setting on the settings menu at any time)? [Y/N]" 24 100
 	call fade in
 	batbox /k
-	if !errorlevel! NEQ 121 goto setupsettings
+	if !errorlevel! == 78 (
+		(echo set playmusic=No)> .data\settings.txt
+		goto skipcheck
+	)
 	if !errorlevel! == 110 (
 		(echo set playmusic=No)> .data\settings.txt
+		goto skipcheck
+	)
+	if !errorlevel! == 89 (
+		(echo set playmusic=Yes)> .data\settings.txt
+		goto skipcheck
 	)
 	if !errorlevel! == 121 (
 		(echo set playmusic=Yes)> .data\settings.txt
+		goto skipcheck
 	)
+	goto setupsettings
+	:skipcheck
 	call fade out
 )
 set playmusic=No
