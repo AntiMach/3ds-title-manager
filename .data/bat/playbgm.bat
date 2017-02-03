@@ -1,0 +1,1 @@
+@Quiet mp3player.bat %1 %2 > nul 2>&1

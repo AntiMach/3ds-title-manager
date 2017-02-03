@@ -1,0 +1,1 @@
+mode con COLS=%1 LINES=%2

@@ -1,0 +1,16 @@
+Some things to keep in mind:
+
+1. Make sure that your titles are decrypted and are either .3ds or .cia files
+2. All titles must be inside this folder (the one with the Title Manager.bat file)
+3. Whenever you extract anything from a .3ds or .cia file, it will go into a folder with the same name as the file, with the extension afterwards (without a ".")
+4. Partition #0 (which is always extracted when unpacking a title) can be really large, so make sure you have tons of space left on your computer.
+5. When repacking a title, it will never replace the old one.
+6. Only folders that have the right files will be recognized by the batch tool.
+7. If you have any questions, just ask me at 
+
+Help with background musics:
+
+1. To add music, go inside the .data folder, then the bgm folder. Make sure that the music is named "Bgm" and has to be
+an mp3 file or else it wont work
+
+The name of the default background music is "Dex Arson - Unarmed Ft.  Emily Abela"
