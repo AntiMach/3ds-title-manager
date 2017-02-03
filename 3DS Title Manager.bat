@@ -81,7 +81,7 @@ echo.
 call centertext "A batch tool by TheMachinumps. Inspiration from the 3DSHackingToolkit by Asia81" 15 100
 batbox /g 0 16 /d "____________________________________________________________________________________________________"
 echo.
-echo    Extract a title      ^|   Unpacks everything from a .3DS or .CIA file
+echo    Extract a title     ^|   Unpacks everything from a .3DS or .CIA file
 echo    Extract RomFS.bin   ^|   Extracts the RomFS file from .3DS, .CIA or .CXI files (Partition #0)
 echo    Rebuild RomFS.bin   ^|   Rebuilds RomFS to be used with Hans
 echo    Rebuild a title     ^|   Repacks everything that was unpacked from a .3DS or .CIA file
