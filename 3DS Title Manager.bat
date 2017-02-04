@@ -15,42 +15,105 @@ batbox /h 0
 color 17
 set quit=0
 set return=0
+set playmusic=No
+set music=.NONE
+set totalmusics=0
+for /f "delims=" %%a in ('dir .data\bgm /a:a /b') do (
+	if "%%~xa" == ".mp3" set /a totalmusics+=1
+	if !totalmusics! == 1 set defaultmusic=%%a
+)
+if !totalmusics! == 0 (
+	(echo set playmusic=No)> .data\settings.txt
+	(echo set music=.NONE)>> .data\settings.txt
+)
+
+if exist ".data\settings.txt" (
+	for /f "delims=" %%a in (.data\settings.txt) do (
+		if !totalmusics! GTR 0 ( 
+			if "%%a" == "set music=.NONE" (
+				goto setupsettings
+			)
+		)
+	)
+)
 
 if not exist ".data\settings.txt" (
 	:setupsettings
 	call centertext "Play music (you can change this setting on the settings menu at any time)? [Y/N]" 24 100
 	call fade in
 	batbox /k
+	if !errorlevel! NEQ 78 if !errorlevel! NEQ 89 if !errorlevel! NEQ 110 if !errorlevel! NEQ 121 goto setupsettings 
 	if !errorlevel! == 78 (
 		(echo set playmusic=No)> .data\settings.txt
-		goto skipcheck
+		(echo set music=!defaultmusic!)>> .data\settings.txt
 	)
 	if !errorlevel! == 110 (
 		(echo set playmusic=No)> .data\settings.txt
-		goto skipcheck
+		(echo set music=!defaultmusic!)>> .data\settings.txt
 	)
 	if !errorlevel! == 89 (
-		(echo set playmusic=Yes)> .data\settings.txt
-		goto skipcheck
+		set playmusic=Yes
+		set music=.TOSET
 	)
 	if !errorlevel! == 121 (
-		(echo set playmusic=Yes)> .data\settings.txt
-		goto skipcheck
+		set playmusic=Yes
+		set music=.TOSET
 	)
-	goto setupsettings
-	:skipcheck
 	call fade out
 )
-set playmusic=No
+
+if "!music!" == ".TOSET" goto music_setup
+:load
 for /f "delims=" %%a in (.data\settings.txt) do %%a
 call centertext "Loading..." 25 100
 call fade in
 set musicplaying=0
 for /f "delims=" %%a in ('tasklist /fi "WINDOWTITLE eq bgm" /fi "IMAGENAME eq cmd.exe"') do if "%%a" NEQ "INFO: No tasks are running which match the specified criteria." set musicplaying=1
-if exist .data\bgm\Bgm.mp3 if !musicplaying! == 0 if "!playmusic!" == "Yes" (
-	call playbgm .data\bgm\Bgm.mp3 loop
+if exist ".data\bgm\!music!" if !musicplaying! == 0 if "!playmusic!" == "Yes" (
+	call playbgm ".data\bgm\!music!" loop
 	call waitforconsole "3DS_Title_Manager" "bgm"
 )
+goto premain
+
+:music_setup
+set opt=1
+set maxopt=0
+for /f "delims=" %%a in ('dir ".data\bgm" /a:a /b') do (
+	if "%%~xa" == ".mp3" (
+		set /a maxopt+=1
+		set name!maxopt!=%%~na
+	)
+)
+cls
+call centertext "Select a music to be played" 1 100
+batbox /g 0 2 /d "____________________________________________________________________________________________________"
+set toclean=
+for /l %%a in (1,1,!maxopt!) do (
+	set /a y=%%a + 3
+	batbox /g 3 !y! /d "!name%%a!"
+	set toclean=/g 1 !y! /a 32 !toclean!
+)
+call fade in
+:music_setup_main
+set /a y=!opt! + 3
+batbox !toclean! /g 1 !y! /a 16 /k
+
+if !errorlevel! == 327 (
+	set /a opt-=1
+)
+if !errorlevel! == 335 (
+	set /a opt+=1
+)
+if !errorlevel! == 13 (
+	(echo set playmusic=Yes) > .data\settings.txt
+	(echo set music=!name%opt%!.mp3) >> .data\settings.txt
+	call fade out
+	goto load
+)
+
+if !opt! GTR !maxopt! set opt=1
+if !opt! LSS 1 set opt=!maxopt!
+goto music_setup_main
 
 :: ############################################################################################################################################
 ::                                                                  MAIN MENU
@@ -136,7 +199,7 @@ goto main
 
 :settings
 set opt=1
-set maxopt=4
+set maxopt=5
 call hugetext "settings" title centered 100
 cls
 echo.
@@ -149,6 +212,7 @@ echo !title6!
 batbox /g 0 7 /d "____________________________________________________________________________________________________"
 echo.
 echo    Play music on launch:
+echo    Select music to play:
 echo    Play music
 echo    Stop music
 echo    Return
@@ -157,6 +221,19 @@ echo  Use the arrow keys to move the cursor
 echo  Press enter to select an option
 echo.
 
+set musicnmopt=1
+set musicmaxopt=0
+for /f "delims=" %%a in ('dir .data\bgm /a:a /b') do (
+	if "%%~xa" == ".mp3" (
+		set /a musicmaxopt+=1
+		set musicnm!musicmaxopt!=%%~na
+		call getlength "%%~na"
+		if !return! GTR 50 (
+			for /f %%b in ("!musicmaxopt!") do set shortmusicnm%%b=!musicnm%%b:~0,50!...
+		)
+		if "%%a" == "!music!" set musicnmopt=!musicmaxopt!
+	)
+)
 set toclean=
 for /l %%a in (1,1,!maxopt!) do (
 	set /a y=%%a + 8
@@ -166,9 +243,25 @@ for /l %%a in (1,1,!maxopt!) do (
 call fade in
 :settingsmain
 set /a y=!opt! + 8
-if !playmusic! == Yes ( set preopt=/a 17 ) else ( set preopt=/a 32 )
-if !playmusic! == No ( set aftopt=/a 16 ) else ( set aftopt=/a 32 )
-batbox !toclean! /g 25 9 /d "         " /g 25 9 !preopt! /d " !playmusic! " !aftopt! /g 1 !y! /a 16 /k
+if !playmusic! == Yes ( set preopt=/c 0x1A /a 17 /c 0x1F ) else ( set preopt=/a 32 )
+if !playmusic! == No ( set aftopt=/c 0x1A /a 16 /c 0x1F) else ( set aftopt=/a 32 )
+set musicopt=/g 25 9 /d "         " /g 25 9 !preopt! /d " !playmusic! " !aftopt!
+if !musicmaxopt! GTR 0 (
+	if defined shortmusicnm!musicnmopt! (
+		set music_name=!shortmusicnm%musicnmopt%!
+	) else (
+		set music_name=!musicnm%musicnmopt%!
+	)
+	if !musicnmopt! GTR 1 ( set preopt=/c 0x1A /a 17 /c 0x1F ) else ( set preopt=/a 32 )
+	if !musicnmopt! LSS !musicmaxopt! ( set aftopt=/c 0x1A /a 16 /c 0x1F ) else ( set aftopt=/a 32 )
+) else (
+	set music_name=No musics found...
+	set preopt=/a 32
+	set aftopt=/a 32
+)
+set musicnmopt_disp=/g 25 10 /d "                                                            " /g 25 10 !preopt! /d " !music_name! " !aftopt!
+
+batbox !toclean! !musicopt! !musicnmopt_disp! /g 1 !y! /a 16 /k
 
 if !errorlevel! == 327 (
 	set /a opt-=1
@@ -176,27 +269,50 @@ if !errorlevel! == 327 (
 if !errorlevel! == 335 (
 	set /a opt+=1
 )
+
 if !errorlevel! == 330 if !playmusic! == Yes if !opt! == 1 (
 	set playmusic=No
 )
 if !errorlevel! == 332 if !playmusic! == No if !opt! == 1 (
 	set playmusic=Yes
 )
+
+if !errorlevel! == 330 if !opt! == 2 (
+	set /a musicnmopt-=1
+)
+if !errorlevel! == 332 if !opt! == 2 (
+	set /a musicnmopt+=1
+)
+if !musicnmopt! GTR !musicmaxopt! set musicnmopt=!musicmaxopt!
+if !musicnmopt! LSS 1 set musicnmopt=1
+if !musicmaxopt! GTR 0 set music=!musicnm%musicnmopt%!.mp3
+
 if !errorlevel! == 13 (
-	if !opt! == 2 (
+	if !opt! == 3 (
+		set musicplaying=0
 		for /f "delims=" %%a in ('tasklist /fi "WINDOWTITLE eq bgm" /fi "IMAGENAME eq cmd.exe"') do if "%%a" NEQ "INFO: No tasks are running which match the specified criteria." set musicplaying=1
-		if exist .data\bgm\Bgm.mp3 if !musicplaying! == 0 if "!playmusic!" == "Yes" (
-			call playbgm .data\bgm\Bgm.mp3 loop
+		if !musicplaying! == 1 (
+			taskkill /fi "WINDOWTITLE eq bgm" /fi "IMAGENAME eq cmd.exe" > nul 2>&1
+			taskkill /fi "WINDOWTITLE eq wait" /fi "IMAGENAME eq cmd.exe" > nul 2>&1
+			set musicplaying=0
+		)
+		if exist ".data\bgm\!music!" if !musicplaying! == 0 if "!playmusic!" == "Yes" (
+			call playbgm ".data\bgm\!music!" loop
 			call waitforconsole "3DS_Title_Manager" "bgm"
 		)
 	)
-	if !opt! == 3 (
+	if !opt! == 4 (
 		taskkill /fi "WINDOWTITLE eq bgm" /fi "IMAGENAME eq cmd.exe" > nul 2>&1
 		taskkill /fi "WINDOWTITLE eq wait" /fi "IMAGENAME eq cmd.exe" > nul 2>&1
 	)
-	if !opt! == 4 (
-		(echo set playmusic=!playmusic!)>".data\settings.txt"
-		call fade out
+	if !opt! == 5 (
+		if !musicmaxopt! GTR 0 (
+			(echo set playmusic=!playmusic!) > ".data\settings.txt"
+			(echo set music=!musicnm%musicnmopt%!.mp3) >> ".data\settings.txt"
+		) else (
+			(echo set playmusic=No) > ".data\settings.txt"
+			(echo set music=.NONE) >> ".data\settings.txt"
+		)
 		goto premain
 	)
 )
