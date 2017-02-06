@@ -28,10 +28,22 @@ if !totalmusics! == 0 (
 )
 
 if exist ".data\settings.txt" (
-	for /f "delims=" %%a in (.data\settings.txt) do (
+	for /f "tokens=1-2 delims=,=" %%a in (.data\settings.txt) do (
 		if !totalmusics! GTR 0 ( 
-			if "%%a" == "set music=.NONE" (
+			if "%%a=%%b" == "set music=.NONE" (
 				goto setupsettings
+			)
+		)
+		if "%%a" == "set playmusic" (
+			set checktoplay=%%b
+		) 
+		if "%%a" == "set music" if "!checktoplay!" == "Yes" (
+			if not exist ".data\bgm\%%b" (
+				call centertext "A music was trying to be loaded, but it doesn't seem to exist." 24 100
+				call fade in
+				batbox /w 1000
+				call fade out
+				if not exist "%%b" goto music_setup
 			)
 		)
 	)
@@ -144,12 +156,12 @@ echo.
 call centertext "A batch tool by TheMachinumps. Inspiration from the 3DSHackingToolkit by Asia81" 15 100
 batbox /g 0 16 /d "____________________________________________________________________________________________________"
 echo.
-echo    Extract a title     ^|   Unpacks everything from a .3DS or .CIA file
-echo    Extract RomFS.bin   ^|   Extracts the RomFS file from .3DS, .CIA or .CXI files (Partition #0)
-echo    Rebuild RomFS.bin   ^|   Rebuilds RomFS to be used with Hans
-echo    Rebuild a title     ^|   Repacks everything that was unpacked from a .3DS or .CIA file
-echo    Settings            ^|   Edit settings of the batch tool
-echo    Exit                ^|   Close the application
+echo    Extract a title           ^|   Unpacks everything from a .3DS or .CIA file
+echo    Extract RomFS and ExeFS   ^|   Extracts the RomFS file from .3DS, .CIA or .CXI files
+echo    Rebuild RomFS and ExeFS   ^|   Rebuilds RomFS to be used with Hans, and the ExeFS
+echo    Rebuild a title           ^|   Repacks everything that was unpacked from a .3DS or .CIA file
+echo    Settings                  ^|   Edit settings of the batch tool
+echo    Exit                      ^|   Close the application
 echo.
 echo  Use the arrow keys to move the cursor
 echo  Press enter to select an option
@@ -429,14 +441,14 @@ if !errorlevel! == 13 (
 		)
 		if exist "!titledir!/Partition 0" (
 			call fade out
-			call centertext "Extracting RomFS..." 24 100
+			call centertext "Extracting RomFS... (This might take a while too)" 24 100
 			call fade in
-			3dstool -xtf romfs "!titledir!/Partition 0/Romfs.bin" --romfs-dir "!titledir!/Partition 0/RomFS-dir"> nul 2>&1
+			3dstool -xtf romfs "!titledir!/Partition 0/Romfs.bin" --romfs-dir "!titledir!/Partition 0/RomFSdir"> nul 2>&1
 			del /f /q "!titledir!\Partition 0\Romfs.bin" > nul 2>&1
 			call fade out
 			call centertext "Extracting ExeFS..." 24 100
 			call fade in
-			3dstool -xutf exefs "!titledir!/Partition 0/Exefs.bin" --header "!titledir!/Partition 0/ExeSF-header.bin" --exefs-dir "!titledir!/Partition 0/ExeFS-dir"> nul 2>&1
+			3dstool -xutf exefs "!titledir!/Partition 0/Exefs.bin" --header "!titledir!/Partition 0/ExeSF-header.bin" --exefs-dir "!titledir!/Partition 0/ExeFSdir"> nul 2>&1
 			del /f /q "!titledir!\Partition 0\Exefs.bin" > nul 2>&1
 			ren "!titledir!\Partition 0\ExeFS-dir\banner.bnr" "banner.bin" > nul 2>&1
 			ren "!titledir!\Partition 0\ExeFS-dir\icon.icn" "icon.bin" > nul 2>&1
@@ -506,14 +518,14 @@ if !errorlevel! == 13 (
 		)
 		if exist "!titledir!/Partition 0" (
 			call fade out
-			call centertext "Extracting RomFS..." 24 100
+			call centertext "Extracting RomFS... (This might take a while too)" 24 100
 			call fade in
-			3dstool -xtf romfs "!titledir!/Partition 0/Romfs.bin" --romfs-dir "!titledir!/Partition 0/RomFS-dir"> nul 2>&1
+			3dstool -xtf romfs "!titledir!/Partition 0/Romfs.bin" --romfs-dir "!titledir!/Partition 0/RomFSdir"> nul 2>&1
 			del /f /q "!titledir!\Partition 0\Romfs.bin" > nul 2>&1
 			call fade out
 			call centertext "Extracting ExeFS..." 24 100
 			call fade in
-			3dstool -xutf exefs "!titledir!/Partition 0/Exefs.bin" --header "!titledir!/Partition 0/ExeSF-header.bin" --exefs-dir "!titledir!/Partition 0/ExeFS-dir"> nul 2>&1
+			3dstool -xutf exefs "!titledir!/Partition 0/Exefs.bin" --header "!titledir!/Partition 0/ExeSF-header.bin" --exefs-dir "!titledir!/Partition 0/ExeFSdir"> nul 2>&1
 			del /f /q "!titledir!\Partition 0\Exefs.bin" > nul 2>&1
 			ren "!titledir!\Partition 0\ExeFS-dir\banner.bnr" "banner.bin" > nul 2>&1
 			ren "!titledir!\Partition 0\ExeFS-dir\icon.icn" "icon.bin" > nul 2>&1
@@ -569,7 +581,7 @@ for /f "delims=" %%a in ('dir /a:a /b') do (
 	)
 )
 cls
-call centertext "Select a file to get the RomFS from" 1 100
+call centertext "Select a file to get the files from" 1 100
 batbox /g 0 2 /d "____________________________________________________________________________________________________"
 set /a maxopt+=1
 set name!maxopt!=Return
@@ -594,10 +606,10 @@ if !errorlevel! == 13 (
 	if !opt! == !maxopt! goto premain
 	set filenm=!name%opt%!
 	set filext=!ext%opt%!
-	for /f "delims=" %%a in ("!filenm!") do set romfsdir=%%~na - RomFSDir
+	for /f "delims=" %%a in ("!filenm!") do set romfsdir=%%~na - Dir
 	if exist "!romfsdir!" (
 		call fade out
-		call centertext "There already exists a directory with the extracted RomFS. Do you want to overwrite it? [Y/N]" 24 100
+		call centertext "There already exists a directory with the extracted data. Do you want to overwrite it? [Y/N]" 24 100
 		call fade in
 		:romfsdir_exists
 		batbox /k
@@ -615,26 +627,58 @@ if !errorlevel! == 13 (
 	md "!romfsdir!"
 	if "!filext!" == ".cia" (
 		call fade out
-		call centertext "Extracting RomFS..." 24 100
+		call centertext "Extracting Partitions... (This might take a while)" 24 100
 		call fade in
 		ctrtool --content="!romfsdir!\part" "!filenm!"> nul 2>&1
 		del /f /q "!romfsdir!\part.0001.*" > nul 2>&1
 		del /f /q "!romfsdir!\part.0002.*" > nul 2>&1
 		ren "!romfsdir!\part.0000.*" "part-0.cxi" > nul 2>&1
-		ctrtool --romfsdir="!romfsdir!" "!romfsdir!\part-0.cxi" > nul 2>&1
+		call fade out
+		call centertext "Extracting RomFS... (This might take a while as well)" 24 100
+		call fade in
+		ctrtool --romfsdir="!romfsdir!\RomFSdir" "!romfsdir!\part-0.cxi" > nul 2>&1
+		call fade out
+		call centertext "Extracting ExeFS..." 24 100
+		call fade in
+		3dstool -xtf cxi "!romfsdir!\part-0.cxi" --exefs "!romfsdir!\ExeFS.bin" > nul 2>&1
+		3dstool -xutf exefs "!romfsdir!\ExeFS.bin" --exefs-dir "!romfsdir!\ExeFSdir" --header "!romfsdir!\ExeFS-header.bin" > nul 2>&1
+		ren "!romfsdir!\ExeFSdir\banner.bnr" banner.bin > nul 2>&1
+		ren "!romfsdir!\ExeFSdir\icon.icn" icon.bin > nul 2>&1
+		del /f /q "!romfsdir!\ExeFS.bin" > nul 2>&1
 		del /f /q "!romfsdir!\part-0.cxi" > nul 2>&1
 	)
 	if "!filext!" == ".3ds" (
 		call fade out
-		call centertext "Extracting RomFS..." 24 100
+		call centertext "Extracting Partition... (This might take a while)" 24 100
 		call fade in
-		ctrtool --romfsdir="!romfsdir!" "!filenm!" > nul 2>&1
+		3dstool -xtf 3ds "!filenm!" -0 "!romfsdir!\part-0.cxi"
+		call fade out
+		call centertext "Extracting RomFS... (This might take a while as well)" 24 100
+		call fade in
+		ctrtool --romfsdir="!romfsdir!\RomFSdir" "!romfsdir!\part-0.cxi" > nul 2>&1
+		call fade out
+		call centertext "Extracting ExeFS..." 24 100
+		call fade in
+		3dstool -xtf cxi "!romfsdir!\part-0.cxi" --exefs "!romfsdir!\ExeFS.bin" > nul 2>&1
+		3dstool -xutf exefs "!romfsdir!\ExeFS.bin" --exefs-dir "!romfsdir!\ExeFSdir" --header "!romfsdir!\ExeFS-header.bin" > nul 2>&1
+		ren "!romfsdir!\ExeFSdir\banner.bnr" banner.bin > nul 2>&1
+		ren "!romfsdir!\ExeFSdir\icon.icn" icon.bin > nul 2>&1
+		del /f /q "!romfsdir!\ExeFS.bin" > nul 2>&1
+		del /f /q "!romfsdir!\part-0.cxi" > nul 2>&1
 	)
 	if "!filext!" == ".cxi" (
 		call fade out
-		call centertext "Extracting RomFS..." 24 100
+		call centertext "Extracting RomFS... (This might take a while)" 24 100
 		call fade in
-		ctrtool --romfsdir="!romfsdir!" "!filenm!" > nul 2>&1
+		ctrtool --romfsdir="!romfsdir!\RomFSdir" "!filenm!" > nul 2>&1
+		call fade out
+		call centertext "Extracting ExeFS..." 24 100
+		call fade in
+		3dstool -xtf cxi "!filenm!" --exefs "!romfsdir!\ExeFS.bin" > nul 2>&1
+		3dstool -xutf exefs "!romfsdir!\ExeFS.bin" --exefs-dir "!romfsdir!\ExeFSdir" --header "!romfsdir!\ExeFS-header.bin" > nul 2>&1
+		ren "!romfsdir!\ExeFSdir\banner.bnr" banner.bin > nul 2>&1
+		ren "!romfsdir!\ExeFSdir\icon.icn" icon.bin > nul 2>&1
+		del /f /q "!romfsdir!\ExeFS.bin" > nul 2>&1
 	)
 	call fade out
 	call centertext "Done. Press any key continue." 24 100
@@ -653,10 +697,10 @@ set opt=1
 set maxopt=0
 for /f "delims=" %%a in ('dir /a:d /b') do (
 	call getlength "%%a"
-	set /a return-=8
+	set /a return-=3
 	set check=%%a
 	for /f "delims=" %%b in ("!return!") do set check=!check:~%%b!
-	if "!check!" == "RomFSDir" (
+	if "!check!" == "Dir" (
 		set /a return-=3
 		set /a maxopt+=1
 		set name=%%a
@@ -664,7 +708,7 @@ for /f "delims=" %%a in ('dir /a:d /b') do (
 	)
 )
 cls
-call centertext "Select a RomFS directory to rebuild" 1 100
+call centertext "Select a directory with the extracted RomFS and ExeFS to rebuild" 1 100
 batbox /g 0 2 /d "____________________________________________________________________________________________________"
 set /a maxopt+=1
 set name!maxopt!=Return
@@ -687,11 +731,11 @@ if !errorlevel! == 335 (
 )
 if !errorlevel! == 13 (
 	if !opt! == !maxopt! goto premain
-	set romfsdir=!name%opt%! - RomFSDir
-	set filenm=!name%opt%! RomFS.bin
-	if exist "!filenm!" (
+	set romfsdir=!name%opt%! - Dir
+	set outdir=!name%opt%! - RomFS ^& ExeFS
+	if exist "!outdir!" (
 		call fade out
-		call centertext "There already exists a RomFS.bin for that game. Do you want to overwrite it? [Y/N]" 24 100
+		call centertext "There already exists extracted data for that game. Do you want to overwrite them? [Y/N]" 24 100
 		call fade in
 		:romfs_exists
 		batbox /k
@@ -704,12 +748,19 @@ if !errorlevel! == 13 (
 			goto romfs_c
 		)
 		if !errorlevel! NEQ 89 if !errorlevel! NEQ 121 goto romfs_exists
-		del /q "!filenm!" > nul 2>&1
+		rd /s /q "!outdir!" > nul 2>&1
 	)
+	md "!outdir!"
 	call fade out
-	call centertext "Rebuilding RomFS.bin..." 24 100
+	call centertext "Rebuilding RomFS.bin... (This might take a while)" 24 100
 	call fade in
-	3dstool -ctf romfs "!filenm!" --romfs-dir "!romfsdir!" > nul 2>&1
+	3dstool -ctf romfs "!outdir!\RomFS.bin" --romfs-dir "!romfsdir!\RomFSdir" > nul 2>&1
+	call fade out
+	call centertext "Rebuilding ExeFS.bin..." 24 100
+	call fade in
+	ren "!romfsdir!\ExeFSdir\banner.bin" banner.bnr > nul 2>&1
+	ren "!romfsdir!\ExeFSdir\icon.bin" icon.icn > nul 2>&1
+	3dstool -ctf exefs "!outdir!\ExeFS.bin" --exefs-dir "!romfsdir!\ExeFSdir" --header "!romfsdir!\ExeFS-header.bin" > nul 2>&1
 	call fade out
 	call centertext "Done. Press any key continue." 24 100
 	call fade in
@@ -924,30 +975,3 @@ if !errorlevel! == 13 (
 if !opt! GTR !maxopt! set opt=1
 if !opt! LSS 1 set opt=!maxopt!
 goto repack_title_main
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
