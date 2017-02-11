@@ -450,9 +450,9 @@ if !errorlevel! == 13 (
 			call fade in
 			3dstool -xutf exefs "!titledir!/Partition 0/Exefs.bin" --header "!titledir!/Partition 0/ExeSF-header.bin" --exefs-dir "!titledir!/Partition 0/ExeFSdir"> nul 2>&1
 			del /f /q "!titledir!\Partition 0\Exefs.bin" > nul 2>&1
-			ren "!titledir!\Partition 0\ExeFS-dir\banner.bnr" "banner.bin" > nul 2>&1
-			ren "!titledir!\Partition 0\ExeFS-dir\icon.icn" "icon.bin" > nul 2>&1
-			3dstool -xtf banner "!titledir!/Partition 0/ExeFS-dir/banner.bin" --banner-dir "!titledir!/Partition 0/Banner-dir" > nul 2>&1
+			ren "!titledir!\Partition 0\ExeFSdir\banner.bnr" "banner.bin" > nul 2>&1
+			ren "!titledir!\Partition 0\ExeFSdir\icon.icn" "icon.bin" > nul 2>&1
+			3dstool -xtf banner "!titledir!/Partition 0/ExeFSdir/banner.bin" --banner-dir "!titledir!/Partition 0/Banner-dir" > nul 2>&1
 			ren "!titledir!\Partition 0\Banner-dir\banner0.bcmdl" "banner.cgfx"
 		)
 		if exist "!titledir!/Partition 1" (
@@ -527,9 +527,9 @@ if !errorlevel! == 13 (
 			call fade in
 			3dstool -xutf exefs "!titledir!/Partition 0/Exefs.bin" --header "!titledir!/Partition 0/ExeSF-header.bin" --exefs-dir "!titledir!/Partition 0/ExeFSdir"> nul 2>&1
 			del /f /q "!titledir!\Partition 0\Exefs.bin" > nul 2>&1
-			ren "!titledir!\Partition 0\ExeFS-dir\banner.bnr" "banner.bin" > nul 2>&1
-			ren "!titledir!\Partition 0\ExeFS-dir\icon.icn" "icon.bin" > nul 2>&1
-			3dstool -xtf banner "!titledir!/Partition 0/ExeFS-dir/banner.bin" --banner-dir "!titledir!/Partition 0/Banner-dir" > nul 2>&1
+			ren "!titledir!\Partition 0\ExeFSdir\banner.bnr" "banner.bin" > nul 2>&1
+			ren "!titledir!\Partition 0\ExeFSdir\icon.icn" "icon.bin" > nul 2>&1
+			3dstool -xtf banner "!titledir!/Partition 0/ExeFSdir/banner.bin" --banner-dir "!titledir!/Partition 0/Banner-dir" > nul 2>&1
 			ren "!titledir!\Partition 0\Banner-dir\banner0.bcmdl" "banner.cgfx"
 		)
 		if exist "!titledir!/Partition 1" (
@@ -839,19 +839,25 @@ if !errorlevel! == 13 (
 		if !errorlevel! NEQ 89 if !errorlevel! NEQ 121 goto title_exists
 		del /q "!filenm!" > nul 2>&1
 	)
-	if "!filext!" == ".3ds" (
+	if "!filext!" == ".cia" (
 		call fade out
 		call centertext "Rebuilding RomFS..." 24 100
 		call fade in
-		3dstool -ctf romfs "!titledir!\Partition 0\RomFS.bin" --romfs-dir "!titledir!\Partition 0\RomFS-dir" > nul 2>&1
+		3dstool -ctf romfs "!titledir!\Partition 0\RomFS.bin" --romfs-dir "!titledir!\Partition 0\RomFSdir" > nul 2>&1
+		call fade out
+		call centertext "Rebuilding Banner..." 24 100
+		call fade in
+		ren "!titledir!\Partition 0\Banner-dir\banner.cgfx" "banner0.bcmdl"
+		3dstool -ctf banner "!titledir!\Partition 0\ExeFSdir\banner.bin" --banner-dir "!titledir!\Partition 0\Banner-dir" > nul 2>&1
+		ren "!titledir!\Partition 0\Banner-dir\banner0.bcmdl" "banner.cgfx"
 		call fade out
 		call centertext "Rebuilding ExeFS..." 24 100
 		call fade in
-		ren "!titledir!\Partition 0\ExeFS-dir\banner.bin" banner.bnr > nul 2>&1
-		ren "!titledir!\Partition 0\ExeFS-dir\icon.bin" icon.icn > nul 2>&1
-		3dstool -cztf exefs "!titledir!\Partition 0\ExeFS.bin" --exefs-dir "!titledir!\Partition 0\ExeFS-dir" --header "!titledir!\Partition 0\ExeSF-header.bin"> nul 2>&1
-		ren "!titledir!\Partition 0\ExeFS-dir\banner.bnr" banner.bin > nul 2>&1
-		ren "!titledir!\Partition 0\ExeFS-dir\icon.icn" icon.bin > nul 2>&1
+		ren "!titledir!\Partition 0\ExeFSdir\banner.bin" banner.bnr > nul 2>&1
+		ren "!titledir!\Partition 0\ExeFSdir\icon.bin" icon.icn > nul 2>&1
+		3dstool -cztf exefs "!titledir!\Partition 0\ExeFS.bin" --exefs-dir "!titledir!\Partition 0\ExeFSdir" --header "!titledir!\Partition 0\ExeSF-header.bin"> nul 2>&1
+		ren "!titledir!\Partition 0\ExeFSdir\banner.bnr" banner.bin > nul 2>&1
+		ren "!titledir!\Partition 0\ExeFSdir\icon.icn" icon.bin > nul 2>&1
 		call fade out
 		call centertext "Rebuilding partition #0..." 24 100
 		call fade in
@@ -859,33 +865,38 @@ if !errorlevel! == 13 (
 		del /q "!titledir!\Partition 0\ExeFS.bin" > nul 2>&1
 		del /q "!titledir!\Partition 0\RomFS.bin" > nul 2>&1
 		
+		set arg1=
+		if exist "!titledir!\Partition 1" (
+			call fade out
+			call centertext "Rebuilding ManualRomFS..." 24 100
+			call fade in
+			3dstool -ctf romfs "!titledir!\Partition 1\RomFS.bin" --romfs-dir "!titledir!\Partition 1\ManualRomFS-dir" > nul 2>&1
+			call fade out
+			call centertext "Rebuilding partition #1..." 24 100
+			call fade in
+			3dstool -ctf cfa "!titledir!\part-1.cfa" --romfs "!titledir!\Partition 1\RomFS.bin" --header "!titledir!\Partition 1\ncch-header.bin" > nul 2>&1
+			del /q "!titledir!\Partition 1\RomFS.bin" > nul 2>&1
+			set arg1=-content "!titledir!\part-1.cfa":1
+		)
 		
-		call fade out
-		call centertext "Rebuilding ManualRomFS..." 24 100
-		call fade in
-		3dstool -ctf romfs "!titledir!\Partition 1\RomFS.bin" --romfs-dir "!titledir!\Partition 1\ManualRomFS-dir" > nul 2>&1
-		call fade out
-		call centertext "Rebuilding partition #1..." 24 100
-		call fade in
-		3dstool -ctf cfa "!titledir!\part-1.cfa" --romfs "!titledir!\Partition 1\RomFS.bin" --header "!titledir!\Partition 1\ncch-header.bin" > nul 2>&1
-		del /q "!titledir!\Partition 1\RomFS.bin" > nul 2>&1
-		
-		
-		call fade out
-		call centertext "Rebuilding DownloadPlayRomFS..." 24 100
-		call fade in
-		3dstool -ctf romfs "!titledir!\Partition 2\RomFS.bin" --romfs-dir "!titledir!\Partition 2\DownloadPlayRomFS-dir" > nul 2>&1
-		call fade out
-		call centertext "Rebuilding partition #2..." 24 100
-		call fade in
-		3dstool -ctf cfa "!titledir!\part-2.cfa" --romfs "!titledir!\Partition 2\RomFS.bin" --header "!titledir!\Partition 2\ncch-header.bin" > nul 2>&1
-		del /q "!titledir!\Partition 2\RomFS.bin" > nul 2>&1
-		
+		set arg2=
+		if exist "!titledir!\Partition 2" (
+			call fade out
+			call centertext "Rebuilding DownloadPlayRomFS..." 24 100
+			call fade in
+			3dstool -ctf romfs "!titledir!\Partition 2\RomFS.bin" --romfs-dir "!titledir!\Partition 2\DownloadPlayRomFS-dir" > nul 2>&1
+			call fade out
+			call centertext "Rebuilding partition #2..." 24 100
+			call fade in
+			3dstool -ctf cfa "!titledir!\part-2.cfa" --romfs "!titledir!\Partition 2\RomFS.bin" --header "!titledir!\Partition 2\ncch-header.bin" > nul 2>&1
+			del /q "!titledir!\Partition 2\RomFS.bin" > nul 2>&1
+			set arg2=-content "!titledir!\part-2.cfa":2
+		)
 		
 		call fade out
 		call centertext "Repacking cia file..." 24 100
 		call fade in
-		makerom -f cia -content "!titledir!\part-0.cxi":0 -content "!titledir!\part-1.cfa":1 -content "!titledir!\part-2.cfa":2 -o "!filenm!" > nul 2>&1
+		makerom -f cia -content "!titledir!\part-0.cxi":0 !arg1! !arg2! -o "!filenm!" > nul 2>&1
 		del /q "!titledir!\part-0.cxi" > nul 2>&1
 		del /q "!titledir!\part-1.cfa" > nul 2>&1
 		del /q "!titledir!\part-2.cfa" > nul 2>&1
@@ -894,22 +905,27 @@ if !errorlevel! == 13 (
 		call fade out
 		call centertext "Rebuilding RomFS..." 24 100
 		call fade in
-		3dstool -ctf romfs "!titledir!\Partition 0\RomFS.bin" --romfs-dir "!titledir!\Partition 0\RomFS-dir" > nul 2>&1
+		3dstool -ctf romfs "!titledir!\Partition 0\RomFS.bin" --romfs-dir "!titledir!\Partition 0\RomFSdir" > nul 2>&1
+		call fade out
+		call centertext "Rebuilding Banner..." 24 100
+		call fade in
+		ren "!titledir!\Partition 0\Banner-dir\banner.cgfx" "banner0.bcmdl"
+		3dstool -ctf banner "!titledir!\Partition 0\ExeFSdir\banner.bin" --banner-dir "!titledir!\Partition 0\Banner-dir" > nul 2>&1
+		ren "!titledir!\Partition 0\Banner-dir\banner0.bcmdl" "banner.cgfx"
 		call fade out
 		call centertext "Rebuilding ExeFS..." 24 100
 		call fade in
-		ren "!titledir!\Partition 0\ExeFS-dir\banner.bin" banner.bnr > nul 2>&1
-		ren "!titledir!\Partition 0\ExeFS-dir\icon.bin" icon.icn > nul 2>&1
-		3dstool -cztf exefs "!titledir!\Partition 0\ExeFS.bin" --exefs-dir "!titledir!\Partition 0\ExeFS-dir" --header "!titledir!\Partition 0\ExeSF-header.bin"> nul 2>&1
-		ren "!titledir!\Partition 0\ExeFS-dir\banner.bnr" banner.bin > nul 2>&1
-		ren "!titledir!\Partition 0\ExeFS-dir\icon.icn" icon.bin > nul 2>&1
+		ren "!titledir!\Partition 0\ExeFSdir\banner.bin" banner.bnr > nul 2>&1
+		ren "!titledir!\Partition 0\ExeFSdir\icon.bin" icon.icn > nul 2>&1
+		3dstool -cztf exefs "!titledir!\Partition 0\ExeFS.bin" --exefs-dir "!titledir!\Partition 0\ExeFSdir" --header "!titledir!\Partition 0\ExeSF-header.bin"> nul 2>&1
+		ren "!titledir!\Partition 0\ExeFSdir\banner.bnr" banner.bin > nul 2>&1
+		ren "!titledir!\Partition 0\ExeFSdir\icon.icn" icon.bin > nul 2>&1
 		call fade out
 		call centertext "Rebuilding partition #0..." 24 100
 		call fade in
 		3dstool -ctf cxi "!titledir!\part-0.cxi" --exefs "!titledir!\Partition 0\ExeFS.bin" --romfs "!titledir!\Partition 0\RomFS.bin" --header "!titledir!\Partition 0\ncch-header.bin" --exh "!titledir!\Partition 0\Ex-Header.bin" --plain "!titledir!\Partition 0\PlainRGN.bin" --logo "!titledir!\Partition 0\LogoLZ.bin" > nul 2>&1
 		del /q "!titledir!\Partition 0\ExeFS.bin" > nul 2>&1
 		del /q "!titledir!\Partition 0\RomFS.bin" > nul 2>&1
-		
 		
 		call fade out
 		call centertext "Rebuilding ManualRomFS..." 24 100
@@ -920,7 +936,6 @@ if !errorlevel! == 13 (
 		call fade in
 		3dstool -ctf cfa "!titledir!\part-1.cfa" --romfs "!titledir!\Partition 1\RomFS.bin" --header "!titledir!\Partition 1\ncch-header.bin" > nul 2>&1
 		del /q "!titledir!\Partition 1\RomFS.bin" > nul 2>&1
-		
 		
 		call fade out
 		call centertext "Rebuilding DownloadPlayRomFS..." 24 100
