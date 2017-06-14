@@ -1,0 +1,10 @@
+About the banner image:
+    - 256px*128px of size.
+
+About the banner audio:
+    - 3 seconds (or less) long;
+    - Sample rate of 32000 Hz or less;
+    - 2 sound channels (stereo), don't know if it works with 1 sound channel.
+
+The files must be named "banner.png" or "banner.wav", and they must be inside of a folder named "<3dsx file name, without extension>-banner".
+    

@@ -134,7 +134,7 @@ goto music_setup_main
 :premain
 call fade out
 set opt=1
-set maxopt=6
+set maxopt=7
 call hugetext "3ds title" title centered 100
 call hugetext "manager" extractor centered 100
 cls
@@ -160,6 +160,7 @@ echo    Extract a title           ^|   Unpacks everything from a .3DS or .CIA fi
 echo    Extract RomFS and ExeFS   ^|   Extracts the RomFS file from .3DS, .CIA or .CXI files
 echo    Rebuild RomFS and ExeFS   ^|   Rebuilds RomFS to be used with Hans, and the ExeFS
 echo    Rebuild a title           ^|   Repacks everything that was unpacked from a .3DS or .CIA file
+echo    Build CIA from 3DSX       ^|   Builds a .CIA file from a .3DSX file 
 echo    Settings                  ^|   Edit settings of the batch tool
 echo    Exit                      ^|   Close the application
 echo.
@@ -167,12 +168,14 @@ echo  Use the arrow keys to move the cursor
 echo  Press enter to select an option
 echo.
 echo  CREDITS:
-echo    Quiet   - Joe Richards
-echo    cmdmp3  - Jim Lawless
-echo    3dstool - Sun Daowen
-echo    ctrtool - Neimod, 3DSGuy ^& Profi200
-echo    makerom - 3DSGuy ^& Profi200
-echo    batbox  - DarkBatcher
+echo    Quiet      - Joe Richards
+echo    cmdmp3     - Jim Lawless
+echo    3dstool    - Sun Daowen
+echo    ctrtool    - Neimod, 3DSGuy ^& Profi200
+echo    makerom    - 3DSGuy ^& Profi200
+echo    bannertool - Steveice10
+echo    cxitool    - fincs
+echo    batbox     - DarkBatcher
 
 set toclean=
 for /l %%a in (1,1,!maxopt!) do (
@@ -197,8 +200,9 @@ if !errorlevel! == 13 (
 	if !opt! == 2 goto romfs_x
 	if !opt! == 3 goto romfs_c
 	if !opt! == 4 goto repack_title
-	if !opt! == 5 goto settings
-	if !opt! == 6 exit
+	if !opt! == 5 goto build_3dsx
+	if !opt! == 6 goto settings
+	if !opt! == 7 exit
 )
 
 if !opt! GTR !maxopt! set opt=1
@@ -990,3 +994,93 @@ if !errorlevel! == 13 (
 if !opt! GTR !maxopt! set opt=1
 if !opt! LSS 1 set opt=!maxopt!
 goto repack_title_main
+
+:build_3dsx
+set opt=1
+set maxopt=0
+for /f "delims=" %%a in ('dir /a:a /b') do (
+	if "%%~xa" == ".3dsx" (
+		set /a maxopt+=1
+		set name!maxopt!=%%~na
+		set fullname!maxopt!=%%a
+	)
+)
+cls
+call centertext "Select a .3dsx file to build a .cia file with" 1 100
+batbox /g 0 2 /d "____________________________________________________________________________________________________"
+set /a maxopt+=1
+set fullname!maxopt!=Return
+set toclean=
+for /l %%a in (1,1,!maxopt!) do (
+	set /a y=%%a + 3
+	batbox /g 3 !y! /d "!fullname%%a!"
+	set toclean=/g 1 !y! /a 32 !toclean!
+)
+call fade in
+:build_3dsx_main
+set /a y=!opt! + 3
+batbox !toclean! /g 1 !y! /a 16 /k
+
+if !errorlevel! == 327 (
+	set /a opt-=1
+)
+if !errorlevel! == 335 (
+	set /a opt+=1
+)
+if !errorlevel! == 13 (
+	if !opt! == !maxopt! goto premain
+	set banner=0
+	if exist "!name%opt%!-banner" (
+		call fade out
+		call centertext "Build banner from !name%opt%!-banner folder? (y/n)" 24 100
+		call fade in
+		:banner
+		batbox /k
+		
+		if !errorlevel! == 121 (
+			set banner=1
+			goto aft_banner
+		)
+		if !errorlevel! == 89 (
+			set banner=1
+			goto aft_banner
+		)
+		
+		if !errorlevel! == 110 (
+			set banner=0
+			goto skip_banner
+		)
+		if !errorlevel! == 78 (
+			set banner=0
+			goto skip_banner
+		)
+		goto banner
+		:aft_banner
+		call fade out
+		call centertext "Building banner.bin..." 24 100
+		call fade in
+		bannertool makebanner -i "!name%opt%!-banner/banner.png" -a "!name%opt%!-banner/banner.wav" -o "!name%opt%!-banner/banner.bin" > nul 2>&1
+	)
+	:skip_banner
+	call fade out
+	call centertext "Building !name%opt%!.cia..." 24 100
+	call fade in
+	if !banner! == 1 (
+		cxitool -b "!name%opt%!-banner/banner.bin" "!name%opt%!.3dsx" "!name%opt%!.cxi" > nul 2>&1
+	) else (
+		cxitool "!name%opt%!.3dsx" "!name%opt%!.cxi" > nul 2>&1
+	)
+	makerom -f cia -o "!name%opt%!.cia" -i "!name%opt%!.cxi:0:0" > nul 2>&1
+	del /q "!name%opt%!.cxi" > nul 2>&1
+	del /q "!name%opt%!-banner\banner.bin" > nul 2>&1
+	call fade out
+	call centertext "Done. Press any key continue." 24 100
+	call fade in
+	pause > nul
+	call fade out
+	goto build_3dsx
+)
+
+if !opt! GTR !maxopt! set opt=1
+if !opt! LSS 1 set opt=!maxopt!
+goto build_3dsx_main
